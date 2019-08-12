@@ -9,6 +9,7 @@ docs/_build/
 *.db
 *.DS_Store
 
-# test
-*.ngraph
-*.bpg
+# test stuff
+dist
+*.egg-info
+*.json

@@ -1,26 +1,91 @@
-### Blueprint Node Graph
+## NodeGraphQt
 
-This repository contains a *work in progress* node graph that I'm working on in my spare time, as
-I wanted to learn how to write a node graph in python using [PySide](http://pyside.github.io/docs/pyside/).
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md) 
+[![python 3.7+](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
+[![PEP8](https://img.shields.io/badge/code%20style-PEP8-green.svg)](https://www.python.org/dev/peps/pep-0008/) 
+[![stability-wip](https://img.shields.io/badge/stability-Work_In_Progress-lightgrey.svg)](https://github.com/orangemug/stability-badges/blob/master/README.md)
 
-A node graph widget that can be implemented and repurposed into applications
-that supports PySide.
+---
 
-![screencap01](https://raw.githubusercontent.com/jchanvfx/bpNodeGraph/master/screenshot.png)
+NodeGraphQt is a node graph framework that can be implemented and re purposed into 
+applications that supports PySide2.
 
-[view example code](https://github.com/jchanvfx/bpNodeGraph/blob/master/example.py)
+<img src="/docs/_images/screenshot.png" width="100%" title="NodeGraphQt">
 
-#### Node Graph Navigation:
-zoom in/out : `Right Mouse Click + Drag` or `Mouse Scroll Up`/`Mouse Scroll Down`<br/>
-pan scene : `Middle Mouse Click + Drag` or `Alt + Left Mouse Click + Drag`<br/>
-fit to screen : `F`
+#### Documentation
 
-#### Node Graph Shortcuts:
-select all nodes : `Ctrl + A`<br/>
-delete selected node(s) : `Backspace` or `Delete`<br/>
-copy node(s): `Ctrl + C` _(copy to clipboard)_<br/>
-paste node(s): `Ctrl + V` _(paste from clipboard)_<br/>
-duplicate node(s) : `Alt + C`<br/>
-save session layout : `Ctrl + S` <br/>
-open session layout : `Ctrl + O` <br/>
-session layout saved as JSON with a `.bpg` file extension.
+http://chantasticvfx.com/nodeGraphQt/html/index.html
+
+#### Navigation
+
+| action        | controls                                   |
+| ------------- |:------------------------------------------:|
+| Zoom in/out   | `Alt + MMB Drag` or `Mouse Scroll Up/Down` |
+| Pan           | `Alt + LMB Drag` or `MMB Drag`             |
+| Node search   | `Tab`                                      |
+
+#### Slice Connections
+
+<img src="/docs/_images/slicer.png" width="500" title="Pipe Slicer">
+
+| action            | controls                 |
+| ----------------- |:------------------------:|
+| Slice Connections | `Shift + Alt + LMB Drag` |
+
+#### Properties Bin
+<img src="/docs/_images/prop_bin.png" width="600" title="Properties Bin">
+
+#### Example
+
+```python
+import sys
+
+from NodeGraphQt import QtWidgets
+from NodeGraphQt import NodeGraph, Node, Backdrop, setup_context_menu
+
+# create a example node object with a input/output port.
+class MyNode(Node):
+    """example test node."""
+
+    # unique node identifier domain. ("com.chantasticvfx.MyNode")
+    __identifier__ = 'com.chantasticvfx'
+
+    # initial default node name.
+    NODE_NAME = 'My Node'
+
+    def __init__(self):
+        super(MyNode, self).__init__()
+        self.add_input('foo', color=(180, 80, 0))
+        self.add_output('bar')
+
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+
+    # create the node graph controller.
+    graph = NodeGraph()
+    
+    # set up default menu and commands.
+    setup_context_menu(graph)
+   
+    # register backdrop node. (included in the NodeGraphQt module)
+    graph.register_node(Backdrop)
+   
+    # register example node into the node graph.
+    graph.register_node(MyNode)
+   
+    # create nodes.
+    backdrop = graph.create_node('nodeGraphQt.nodes.Backdrop', name='Backdrop')
+    node_a = graph.create_node('com.chantasticvfx.MyNode', name='Node A')
+    node_b = graph.create_node('com.chantasticvfx.MyNode', name='Node B', color='#5b162f')
+    
+    # connect node a input to node b output.
+    node_a.set_input(0, node_b.output(0))    
+
+    # show widget.
+    viewer = graph.viewer()
+    viewer.show()
+
+    app.exec_()
+```
+

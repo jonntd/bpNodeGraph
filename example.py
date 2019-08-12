@@ -1,125 +1,121 @@
-import sys
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import os
-from PySide import QtGui, QtCore
+import sys
 
-import BlueprintNodeGraph as BpGraph
+from NodeGraphQt import (NodeGraph,
+                         BaseNode,
+                         BackdropNode,
+                         setup_context_menu)
+from NodeGraphQt import QtWidgets, QtCore, PropertiesBinWidget, NodeTreeWidget
+
+# import example nodes from the "example_nodes" package
+from example_nodes import basic_nodes, widget_nodes
 
 
-class TestNodeFoo(BpGraph.Node):
+class MyNode(BaseNode):
     """
-    A node class with 2 inputs and 2 outputs.
-    """
-
-    def __init__(self, name=None):
-        super(TestNodeFoo, self).__init__(name)
-        # create node inputs
-        self.add_input('foo')
-        self.add_input('bar')
-        # create node outputs
-        self.add_output('apples')
-        self.add_output('bananas')
-
-BpGraph.register_node(TestNodeFoo)
-
-
-class TestNodeBar(BpGraph.Node):
-    """
-    A node class with 3 inputs and 3 outputs.
+    example test node.
     """
 
-    def __init__(self, name=None):
-        super(TestNodeBar, self).__init__(name)
-        # create node inputs
-        self.add_input('hello')
-        self.add_input('world')
-        self.add_input('foo bar')
-        # create node outputs
-        self.add_output('apples')
-        self.add_output('bananas')
-        self.add_output('orange')
+    # set a unique node identifier.
+    __identifier__ = 'com.chantasticvfx'
 
-BpGraph.register_node(TestNodeBar)
+    # set the initial default node name.
+    NODE_NAME = 'my node'
 
+    def __init__(self):
+        super(MyNode, self).__init__()
+        self.set_color(25, 58, 51)
 
-class TextInputNode(BpGraph.Node):
-    """
-    A example of a node with a added text input.
-    """
-
-    def __init__(self, name=None):
-        super(TextInputNode, self).__init__(name)
-        # create node inputs
-        self.add_input('hello')
-        # create node outputs
-        self.add_output('world')
-        # add text input field to node.
-        self.add_text_input('my_input', 'Text Input')
-
-BpGraph.register_node(TextInputNode)
-
-
-class DropdownMenuNode(BpGraph.Node):
-    """
-    A example of a node with a added menu and a few input & outputs.
-    """
-
-    def __init__(self, name=None):
-        super(DropdownMenuNode, self).__init__(name)
-        # create node inputs
-        self.add_input('hello')
-        # create node outputs
-        self.add_output('world')
-        self.add_output('foo')
-        # add text input field to node.
-        items = ['item 1', 'item2', 'item3']
-        self.add_menu('my_menu_1', 'Menu Test', items=items)
-
-BpGraph.register_node(DropdownMenuNode)
-
-
-class NodeGraph(BpGraph.NodeGraph):
-
-    def __init__(self, parent=None):
-        super(NodeGraph, self).__init__(parent)
-        self.setWindowTitle('Blueprint Node Graph')
-        self.resize(1100, 800)
-
-    def keyPressEvent(self, event):
-        key = event.key()
-        if key == QtCore.Qt.Key_Escape:
-            self.close()
+        # create input and output port.
+        self.add_input('in port', color=(200, 10, 0))
+        self.add_output('out port')
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # create node graph.
     graph = NodeGraph()
-    graph.show()
 
-    # create the nodes.
-    foo_node = graph.create_node(class_type='TestNodeFoo', name='Foo Node')
-    bar_node = graph.create_node(class_type='TestNodeBar', name='Bar Node')
-    text_node = graph.create_node(class_type='TextInputNode', name='Text Node')
-    menu_node = graph.create_node(class_type='DropdownMenuNode', name='Menu Node')
+    # set up default menu and commands.
+    setup_context_menu(graph)
 
-    # change the color on "foo_node"
-    foo_node.set_color(17, 52, 88)
+    # viewer widget used for the node graph.
+    viewer = graph.viewer()
+    viewer.resize(1100, 800)
+    viewer.show()
 
-    # chage icon on "bar_node"
+
+    # show the properties bin when a node is "double clicked" in the graph.
+    properties_bin = PropertiesBinWidget(node_graph=graph)
+    properties_bin.setWindowFlags(QtCore.Qt.Tool)
+    def show_prop_bin(node):
+        if not properties_bin.isVisible():
+            properties_bin.show()
+    graph.node_double_clicked.connect(show_prop_bin)
+
+
+    # show the nodes list when a node is "double clicked" in the graph.
+    node_tree = NodeTreeWidget(node_graph=graph)
+    def show_nodes_list(node):
+        if not node_tree.isVisible():
+            node_tree.update()
+            node_tree.show()
+    graph.node_double_clicked.connect(show_nodes_list)
+
+
+    # registered nodes.
+    reg_nodes = [
+        BackdropNode, MyNode,
+        basic_nodes.FooNode,
+        basic_nodes.BarNode,
+        widget_nodes.DropdownMenuNode,
+        widget_nodes.TextInputNode,
+        widget_nodes.CheckboxNode
+    ]
+    for n in reg_nodes:
+        graph.register_node(n)
+
+    my_node = graph.create_node('com.chantasticvfx.MyNode',
+                                name='chantastic!',
+                                color='#0a1e20',
+                                text_color='#feab20',
+                                pos=[310, 10])
+
+    foo_node = graph.create_node('com.chantasticvfx.FooNode',
+                                 name='node',
+                                 pos=[-480, 140])
+    foo_node.set_disabled(True)
+
+    # create example "TextInputNode".
+    text_node = graph.create_node('com.chantasticvfx.TextInputNode',
+                                  name='text node',
+                                  pos=[-480, -160])
+
+    # create example "TextInputNode".
+    checkbox_node = graph.create_node('com.chantasticvfx.CheckboxNode',
+                                  name='checkbox node',
+                                  pos=[-480, -20])
+
+    # create node with a combo box menu.
+    menu_node = graph.create_node('com.chantasticvfx.DropdownMenuNode',
+                                  name='menu node',
+                                  pos=[280, -200])
+
+    # change node icon.
     this_path = os.path.dirname(os.path.abspath(__file__))
-    icon = os.path.join(this_path, 'example_icon.png')
+    icon = os.path.join(this_path, 'example_nodes', 'pear.png')
+    bar_node = graph.create_node('com.chantasticvfx.BarNode')
     bar_node.set_icon(icon)
+    bar_node.set_name('icon node')
+    bar_node.set_pos(-70, 10)
 
-    # position nodes.
-    foo_node.set_pos(-487.0, 141.0)
-    bar_node.set_pos(-77.0, 17.0)
-    text_node.set_pos(-488.0, -158.0)
-    menu_node.set_pos(310.0, -97.0)
-
-    # connect nodes
+    # connect the nodes
     foo_node.set_output(0, bar_node.input(2))
     menu_node.set_input(0, bar_node.output(1))
     bar_node.set_input(0, text_node.output(0))
+
 
     app.exec_()
